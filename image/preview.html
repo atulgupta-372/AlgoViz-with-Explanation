@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prefix Expression Evaluation Visualizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f9;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .controls button {
+      font-size: 14px;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007BFF;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .controls button:hover {
+      background-color: #0056b3;
+    }
+    #output {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #e9f5ff;
+    }
+    .step {
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f9f9f9;
+      border-left: 4px solid #007BFF;
+    }
+    .stack-container {
+      display: flex;
+      align-items: flex-start;
+    }
+    .stack-visual {
+      display: flex;
+      flex-direction: column-reverse;
+      margin-right: 20px;
+      width: 100px;
+      height: 300px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 5px;
+      background: #fff;
+    }
+    .stack-item {
+      width: 80px;
+      height: 30px;
+      margin: 5px 0;
+      background-color: #007BFF;
+      color: #fff;
+      text-align: center;
+      line-height: 30px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    .stack-label {
+      font-size: 14px;
+      font-weight: bold;
+      color: #555;
+      margin-top: 10px;
+      text-align: center;
+    }
+    @keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    body {
+        background: linear-gradient(to right, #6a11cb, #2575fc);
+        background-size: 200% 200%;
+        animation: gradientAnimation 10s ease infinite;
+        color: #333;
+    }
+    .container {
+        background: rgba(255, 255, 255, 0.9);
+    }
+    .stack-item {
+        background-color: #28a745;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Prefix Expression Evaluation Visualizer</h1>
+    <p>Enter a space-separated prefix expression (e.g., "* + 5 6 2"):</p>
+    <input type="text" id="prefixInput" placeholder="Enter prefix expression" />
+    <button onclick="initializeVisualization()">Visualize</button>
+
+    <div class="controls">
+      <button onclick="previousStep()">Previous</button>
+      <button onclick="nextStep()">Next</button>
+      <button onclick="autoPlay()">Auto Play</button>
+    </div>
+
+    <div class="stack-container">
+      <div class="stack-visual" id="stackVisual"></div>
+      <div class="stack-label"></div>
+      <div id="output"></div>
+    </div>
+  </div>
+
+  <script>
+    let steps = [];
+    let currentStepIndex = 0;
+    let autoPlayInterval;
+
+    function initializeVisualization() {
+      const prefixInput = document.getElementById('prefixInput').value.trim();
+      const outputDiv = document.getElementById('output');
+      const stackVisual = document.getElementById('stackVisual');
+
+      if (!prefixInput) {
+        outputDiv.innerHTML = '<p>Please enter a prefix expression.</p>';
+        stackVisual.innerHTML = '';
+        return;
+      }
+
+      const tokens = prefixInput.split(/\s+/).reverse();
+      const stack = [];
+      steps = [];
+
+      tokens.forEach((token, index) => {
+        if (!isNaN(token)) {
+          stack.push(Number(token));
+          steps.push({ action: `Push ${token} onto the stack`, stack: [...stack] });
+        } else {
+          if (stack.length < 2) return;
+          const operand1 = stack.pop();
+          const operand2 = stack.pop();
+          let result;
+          switch (token) {
+            case '+': result = operand1 + operand2; break;
+            case '-': result = operand1 - operand2; break;
+            case '*': result = operand1 * operand2; break;
+            case '/': result = operand1 / operand2; break;
+            default: return;
+          }
+          stack.push(result);
+          steps.push({ action: `Apply ${token} to ${operand1} and ${operand2}, push ${result}`, stack: [...stack] });
+        }
+      });
+
+      currentStepIndex = 0;
+      displayStep();
+    }
+
+    function displayStep() {
+      const outputDiv = document.getElementById('output');
+      const stackVisual = document.getElementById('stackVisual');
+
+      if (currentStepIndex >= steps.length) return;
+      const step = steps[currentStepIndex];
+
+      outputDiv.innerHTML = `<div class="step">${step.action}</div>`;
+      stackVisual.innerHTML = '';
+      step.stack.slice().reverse().forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'stack-item';
+        div.textContent = item;
+        stackVisual.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
