@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Chatbot</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        .chat-container {
+            width: 350px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-box {
+            height: 350px;
+            overflow-y: auto;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-input {
+            display: flex;
+            margin-top: 10px;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        button {
+            padding: 10px 15px;
+            margin-left: 5px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .user, .bot {
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin: 5px 0;
+            max-width: 75%;
+        }
+        .user {
+            background: #4CAF50;
+            color: white;
+            align-self: flex-end;
+        }
+        .bot {
+            background: #e0e0e0;
+            color: black;
+            align-self: flex-start;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h3 style="text-align: center; color: #333;">Algorithm Chatbot</h3>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Ask about algorithms...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function sendMessage() {
+            let userInput = document.getElementById("user-input").value;
+            if (userInput.trim() === "") return;
+            
+            let chatBox = document.getElementById("chat-box");
+            let userMessage = `<div class='user'>${userInput}</div>`;
+            chatBox.innerHTML += userMessage;
+            document.getElementById("user-input").value = "";
+            
+            fetchReply(userInput);
+        }
+
+        function fetchReply(query) {
+            fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=AIzaSyCiXkfF0iqFLd0A8gmP6lfUeOn_wGtn3jw", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    contents: [{ role: "user", parts: [{ text: query }] }]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                let botMessage = `<div class='bot'>${data.candidates[0].content.parts[0].text}</div>`;
+                document.getElementById("chat-box").innerHTML += botMessage;
+                document.getElementById("chat-box").scrollTop = document.getElementById("chat-box").scrollHeight;
+            })
+            .catch(error => {
+                let botMessage = `<div class='bot'>Sorry, there was an error retrieving the information.</div>`;
+                document.getElementById("chat-box").innerHTML += botMessage;
+            });
+        }
+    </script>
+</body>
+</html>
