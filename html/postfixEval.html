@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Postfix Expression Evaluation Visualizer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f9;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    input, button {
+      padding: 8px;
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .controls button {
+      font-size: 14px;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007BFF;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .controls button:hover {
+      background-color: #0056b3;
+    }
+    #output {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #e9f5ff;
+    }
+    .step {
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f9f9f9;
+      border-left: 4px solid #007BFF;
+    }
+    .stack-container {
+      display: flex;
+      align-items: flex-start;
+    }
+    .stack-visual {
+      display: flex;
+      flex-direction: column-reverse;
+      margin-right: 20px;
+      width: 100px;
+      height: 300px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 5px;
+      background: #fff;
+    }
+    .stack-item {
+      width: 80px;
+      height: 30px;
+      margin: 5px 0;
+      background-color: #007BFF;
+      color: #fff;
+      text-align: center;
+      line-height: 30px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    .stack-label {
+      font-size: 14px;
+      font-weight: bold;
+      color: #555;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Postfix Expression Evaluation Visualizer</h1>
+    <p>Enter a space separated postfix expression (e.g., "5 6 + 2 *"):</p>
+    <input type="text" id="postfixInput" placeholder="Enter postfix expression" />
+    <button onclick="initializeVisualization()">Visualize</button>
+
+    <div class="controls">
+      <button onclick="previousStep()">Previous</button>
+      <button onclick="nextStep()">Next</button>
+      <button onclick="autoPlay()">Auto Play</button>
+    </div>
+
+    <div class="stack-container">
+      <div class="stack-visual" id="stackVisual"></div>
+      <div class="stack-label"></div>
+      <div id="output"></div>
+    </div>
+  </div>
+
+  <script>
+    let steps = [];
+    let currentStepIndex = 0;
+    let autoPlayInterval;
+
+    function initializeVisualization() {
+      const postfixInput = document.getElementById('postfixInput').value.trim();
+      const outputDiv = document.getElementById('output');
+      const stackVisual = document.getElementById('stackVisual');
+
+      if (!postfixInput) {
+        outputDiv.innerHTML = '<p>Please enter a postfix expression.</p>';
+        stackVisual.innerHTML = '';
+        return;
+      }
+
+      const tokens = postfixInput.split(/\s+/); // Split by whitespace
+      const stack = [];
+      steps = [];
+
+      tokens.forEach((token, index) => {
+        if (!isNaN(token)) {
+          // If token is a number, push it to the stack
+          stack.push(Number(token));
+          steps.push({
+            action: `Step ${steps.length + 1}: Push the operand ${token} onto the stack.`,
+            explanation: `The current token is a number (${token}), so we add it to the stack.`,
+            stack: [...stack],
+          });
+        } else {
+          // Token is an operator, perform the operation
+          if (stack.length < 2) {
+            steps.push({
+              action: `Step ${steps.length + 1}: Error - insufficient values for operator ${token}.`,
+              explanation: `Operators require at least two operands. The stack does not have enough values for the operation.`,
+              stack: [...stack],
+            });
+            return;
+          }
+
+          const operand2 = stack.pop();
+          const operand1 = stack.pop();
+          let result;
+
+          switch (token) {
+            case '+':
+              result = operand1 + operand2;
+              break;
+            case '-':
+              result = operand1 - operand2;
+              break;
+            case '*':
+              result = operand1 * operand2;
+              break;
+            case '/':
+              result = operand1 / operand2;
+              break;
+            default:
+              steps.push({
+                action: `Step ${steps.length + 1}: Error - unknown operator ${token}.`,
+                explanation: `The operator (${token}) is not recognized.`,
+                stack: [...stack],
+              });
+              return;
+          }
+
+          stack.push(result);
+          steps.push({
+            action: `Step ${steps.length + 1}: Apply the operator ${token} to ${operand1} and ${operand2}.`,
+            explanation: `The operator (${token}) is applied to the operands (${operand1} and ${operand2}). ${operand1} is the first operand because it was popped from the stack first, and ${operand2} is the second operand. The result (${result}) is pushed back onto the stack.`,
+            stack: [...stack],
+          });
+        }
+      });
+
+      if (stack.length === 1) {
+        steps.push({
+          action: `Step ${steps.length + 1}: Final result is ${stack[0]}.`,
+          explanation: `The stack contains a single value, which is the result of the postfix expression.`,
+          stack: [...stack],
+        });
+      } else {
+        steps.push({
+          action: `Step ${steps.length + 1}: Error - invalid postfix expression.`,
+          explanation: `The stack contains more than one value, indicating the expression is invalid.`,
+          stack: [...stack],
+        });
+      }
+
+      currentStepIndex = 0;
+      displayStep();
+    }
+
+    function displayStep() {
+      const outputDiv = document.getElementById('output');
+      const stackVisual = document.getElementById('stackVisual');
+
+      if (currentStepIndex < 0 || currentStepIndex >= steps.length) return;
+
+      const step = steps[currentStepIndex];
+
+      outputDiv.innerHTML = `<div class="step"><strong>${step.action}</strong><p>${step.explanation}</p></div>`;
+      stackVisual.innerHTML = '';
+
+      step.stack.slice().reverse().forEach((item) => {
+        const div = document.createElement('div');
+        div.className = 'stack-item';
+        div.textContent = item;
+        stackVisual.appendChild(div);
+      });
+    }
+
+    function nextStep() {
+      if (currentStepIndex < steps.length - 1) {
+        currentStepIndex++;
+        displayStep();
+      }
+    }
+
+    function previousStep() {
+      if (currentStepIndex > 0) {
+        currentStepIndex--;
+        displayStep();
+      }
+    }
+
+    function autoPlay() {
+      if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+        return;
+      }
+
+      autoPlayInterval = setInterval(() => {
+        if (currentStepIndex < steps.length - 1) {
+          nextStep();
+        } else {
+          clearInterval(autoPlayInterval);
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
+<style>
+    @keyframes gradientAnimation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    body {
+        background: linear-gradient(to right, #6a11cb, #2575fc);
+        background-size: 200% 200%;
+        animation: gradientAnimation 10s ease infinite;
+        color: #333;
+    }
+
+    .container {
+        background: rgba(255, 255, 255, 0.9);
+    }
+
+    .controls button {
+        background-color: #28a745;
+    }
+
+    .controls button:hover {
+        background-color: #218838;
+    }
+
+    .stack-item {
+        background-color: #28a745;
+    }
+</style>
+<style>
+    body {
+        background: linear-gradient(to right, #6a11cb, #2575fc);
+        color: #333;
+    }
+    .container {
+        background: rgba(255, 255, 255, 0.9);
+    }
+    .controls button {
+        background-color: #28a745;
+    }
+    .controls button:hover {
+        background-color: #218838;
+    }
+    .stack-item {
+        background-color: #28a745;
+    }
+</style>
+<div id="info"></div>
+
+<script>
+    function displayStep() {
+        const outputDiv = document.getElementById('output');
+        const stackVisual = document.getElementById('stackVisual');
+        const infoDiv = document.getElementById('info');
+
+        if (currentStepIndex < 0 || currentStepIndex >= steps.length) return;
+
+        const step = steps[currentStepIndex];
+
+        outputDiv.innerHTML = `<div class="step"><strong>${step.action}</strong><p>${step.explanation}</p></div>`;
+        stackVisual.innerHTML = '';
+        infoDiv.innerHTML = `<p>${step.explanation}</p>`;
+
+        step.stack.slice().reverse().forEach((item) => {
+            const div = document.createElement('div');
+            div.className = 'stack-item';
+            div.textContent = item;
+            stackVisual.appendChild(div);
+        });
+    }
+</script>
